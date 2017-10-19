@@ -37,12 +37,12 @@ module "network" {
 
 ## Examples
 
-* [Simple Network](https://github.com/terraform-ovh-modules/terraform-ovh-publiccloud-network/tree/master/examples/simple)
-* [Multi Region Network](https://github.com/terraform-ovh-modules/terraform-ovh-publiccloud-network/tree/master/examples/multiregion)
+* [Simple Network](./examples/simple/README.md)
+* [Multi Region Network](./examples/multiregion/README.md)
 
 ## How do I contribute to this Module?
 
-Contributions are very welcome! Check out the [Contribution Guidelines](https://github.com/terraform-ovh-modules/terraform-ovh-publiccloud-network/tree/master/CONTRIBUTING.md) for instructions.
+Contributions are very welcome! Check out the [Contribution Guidelines](CONTRIBUTING.md) for instructions.
 
 ## Authors
 
