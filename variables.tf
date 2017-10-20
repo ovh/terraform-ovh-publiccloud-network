@@ -94,12 +94,12 @@ variable "enable_nat_gateway" {
 }
 
 variable "single_nat_gateway" {
-  description = "Should be true if you want to provision NAT Gateways for each of your private subnets"
+  description = "Should be true if you want to provision only one NAT Gateway for all of your private subnets"
   default     = false
 }
 
 variable "enable_bastion_host" {
-  description = "Should be true if you want to provision a bastion host in the public subnet."
+  description = "Should be true if you want to provision a bastion host in the first public subnet."
   default     = false
 }
 
