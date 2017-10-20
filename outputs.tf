@@ -3,6 +3,11 @@ output "nat_security_group_id" {
   value       = "${openstack_networking_secgroup_v2.nat_sg.id}"
 }
 
+output "network_id" {
+  description = "The id of the network."
+  value       = "${element(coalescelist(openstack_networking_network_v2.net.*.id, list(var.network_id)), 0)}"
+}
+
 output "public_subnets" {
   description = "The ids of the newly created public subnets within the network"
   value       = ["${openstack_networking_subnet_v2.public_subnets.*.id}"]

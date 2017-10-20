@@ -8,6 +8,10 @@
 ## should be attached to. (e.g. NATs, LBs, Bastion hosts, ...)
 ## The nat gw will be fixed to the 2nd ip (usually .1) of the subnets
 ## and the allocation pools will start at the 3rd ip (usually .2)
+locals {
+  re_cap_cidr_block  = "/[^/]*/([0-9]*)$/"
+  network_cidr_block = "${replace(var.cidr, local.re_cap_cidr_block, "$1")}"
+}
 
 provider "openstack" {
   alias  = "${var.region}"
@@ -143,10 +147,6 @@ resource "openstack_networking_port_v2" "port_nats" {
     subnet_id  = "${element(openstack_networking_subnet_v2.public_subnets.*.id, count.index)}"
     ip_address = "${cidrhost(var.public_subnets[count.index], 1)}"
   }
-
-  lifecycle {
-    create_before_destroy = true
-  }
 }
 
 # ovh actual coreos stable version requires ignition v0.1.0
@@ -158,8 +158,12 @@ provider "ignition" {
 # set route metric to 2048 in order to privilege eth0 default routes (with a default metric of 1024) over eth1
 ## also enables ip forward to act as a nat
 data "ignition_networkd_unit" "nat_eth1" {
-  name = "20-eth1.network"
+  count = "${var.enable_nat_gateway ? (var.single_nat_gateway ? 1 : length(var.public_subnets)) : 0}"
+  name  = "20-eth1.network"
 
+  ## Address is set with the global network CIDR block
+  ## will ensure broadcast address to be set for the global network.
+  ## (e.g.: 10.0.0.1/24 with broadcast 10.0.0.255 -> 10.0.0.1/16 with broadcast 10.0.255.255)
   content = <<IGNITION
 [Match]
 Name=eth1
@@ -167,13 +171,18 @@ Name=eth1
 DHCP=ipv4
 IPForward=ipv4
 IPMasquerade=yes
-Address=${var.cidr}
 [Route]
 Destination=${var.cidr}
 GatewayOnLink=yes
 RouteMetric=3
+Scope=link
+Protocol=kernel
+Source=${cidrhost(var.public_subnets[count.index], 1)}
 [DHCP]
 RouteMetric=2048
+[Address]
+Address=${format("%s/%s", cidrhost(var.public_subnets[count.index], 1), local.network_cidr_block)}
+Scope=global
 IGNITION
 }
 
@@ -192,11 +201,13 @@ IGNITION
 
 data "ignition_user" "core" {
   name                = "core"
-  ssh_authorized_keys = "${var.nat_ssh_public_keys}"
+  ssh_authorized_keys = ["${var.nat_ssh_public_keys}"]
 }
 
 data "ignition_config" "nat" {
-  networkd = ["${data.ignition_networkd_unit.nat_eth0.id}", "${data.ignition_networkd_unit.nat_eth1.id}"]
+  count = "${var.enable_nat_gateway ? (var.single_nat_gateway ? 1 : length(var.public_subnets)) : 0}"
+
+  networkd = ["${data.ignition_networkd_unit.nat_eth0.id}", "${element(data.ignition_networkd_unit.nat_eth1.*.id, count.index)}"]
   users    = ["${data.ignition_user.core.*.id}"]
 }
 
@@ -211,12 +222,10 @@ resource "openstack_compute_instance_v2" "nats" {
 
   provider = "openstack.${var.region}"
 
-  name            = "${var.name}_nat_gw_${count.index}"
-  image_name      = "CoreOS Stable"
-  flavor_name     = "${lookup(var.nat_instance_flavor_names, var.region)}"
-  security_groups = ["${openstack_networking_secgroup_v2.nat_sg.name}"]
-
-  user_data = "${data.ignition_config.nat.rendered}"
+  name        = "${var.name}_nat_gw_${count.index}"
+  image_name  = "CoreOS Stable"
+  flavor_name = "${lookup(var.nat_instance_flavor_names, var.region)}"
+  user_data   = "${element(data.ignition_config.nat.*.rendered,count.index)}"
 
   # keep netwokrs in this order so that ext-net is set on eth0
   network {
