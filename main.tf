@@ -362,7 +362,7 @@ resource "openstack_compute_instance_v2" "bastion" {
   provider = "openstack.${var.region}"
   count    = "${local.enable_bastion ? 1 : 0 }"
 
-  name        = "${var.name}"
+  name        = "${var.name}_bastion"
   image_name  = "CoreOS Stable"
   flavor_name = "${lookup(var.bastion_instance_flavor_names, var.region)}"
 
