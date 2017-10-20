@@ -17,16 +17,16 @@ These types of resources are supported:
 module "network" {
   source = "terraform-ovh-modules/publiccloud_network/ovh"
 
-  name = "my-network"
-  cidr = "10.0.0.0/16"
-
-  network_id = "XXX"
-
+  project_id      = "XXX"
+  vrack_id        = "YYY"
+  name            = "my-network"
   region          = "GRA3"
+  cidr            = "10.0.0.0/16"
   public_subnets  = ["10.0.0.0/24"]
   private_subnets = ["10.0.1.0/24"]
 
-  enable_nat_gateway = true
+  enable_nat_gateway  = true
+  enable_bastion_host = true
 
   metadata = {
     Terraform   = "true"
@@ -39,6 +39,8 @@ module "network" {
 
 * [Simple Network](./examples/simple/README.md)
 * [Multi Region Network](./examples/multiregion/README.md)
+* [Simple Network with bastion host](./examples/bastion/README.md)
+* [Simple Network with NAT Gateway as a bastion host](./examples/natbastion/README.md)
 
 ## How do I contribute to this Module?
 
