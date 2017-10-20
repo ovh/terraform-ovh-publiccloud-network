@@ -48,14 +48,10 @@ variable "private_subnets" {
   default     = []
 }
 
-variable "nat_ssh_public_keys" {
+variable "ssh_public_keys" {
   type = "list"
 
-  description = <<DESC
-The ssh public keys which could be used for nat instances.
-This can be usefull if one would like to use the nat instances as
-ssh proxies.
-DESC
+  description = "The ssh public keys to be used for nat instances and bastion hosts."
 
   default = []
 }
@@ -76,6 +72,22 @@ variable "nat_instance_flavor_names" {
   }
 }
 
+variable "bastion_instance_flavor_names" {
+  type = "map"
+
+  description = "A map of flavor names per openstack region that will be used for Bastion host."
+
+  default = {
+    GRA1 = "s1-2"
+    SBG3 = "s1-2"
+    GRA3 = "s1-2"
+    SBG3 = "s1-2"
+    BHS3 = "s1-2"
+    WAW1 = "s1-2"
+    DE1  = "s1-2"
+  }
+}
+
 variable "enable_nat_gateway" {
   description = "Should be true if you want to provision NAT Gateways for each of your private subnets"
   default     = false
@@ -83,6 +95,16 @@ variable "enable_nat_gateway" {
 
 variable "single_nat_gateway" {
   description = "Should be true if you want to provision NAT Gateways for each of your private subnets"
+  default     = false
+}
+
+variable "enable_bastion_host" {
+  description = "Should be true if you want to provision a bastion host in the public subnet."
+  default     = false
+}
+
+variable "nat_as_bastion" {
+  description = "Should be true if you want to make NAT Gateways act as bastion hosts."
   default     = false
 }
 
