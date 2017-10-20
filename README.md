@@ -11,6 +11,10 @@ These types of resources are supported:
 * [Port](https://www.terraform.io/docs/providers/openstack/r/networking_port_v2.html)
 * [Instance](https://www.terraform.io/docs/providers/openstack/r/compute_instance_v2.html)
 
+# Network Topology Example
+
+![](./network_topology_example.png?raw=true)
+
 # Usage
 
 ```hcl
@@ -19,14 +23,17 @@ module "network" {
 
   project_id      = "XXX"
   vrack_id        = "YYY"
-  name            = "my-network"
-  region          = "GRA3"
+
+  name            = "mynetwork"
   cidr            = "10.0.0.0/16"
-  public_subnets  = ["10.0.0.0/24"]
-  private_subnets = ["10.0.1.0/24"]
+  region          = "GRA3"
+  public_subnets  = ["10.0.0.0/24", "10.0.10.0/24"]
+  private_subnets = ["10.0.1.0/24", "10.0.11.0/24"]
 
   enable_nat_gateway  = true
   enable_bastion_host = true
+
+  ssh_public_keys = ["${openstack_compute_keypair_v2.keypair.public_key}"]
 
   metadata = {
     Terraform   = "true"
