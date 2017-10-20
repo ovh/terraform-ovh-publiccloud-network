@@ -1,10 +1,10 @@
-Simple Openstack Network with Bastion Host
+Openstack Network with Bastion Host
 ==========
 
-Configuration in this directory creates set of openstack resources which may be sufficient for development environment.
+Configuration in this directory creates set of openstack resources to boot a multi subnets network infrasctucture.
 
-There's 1 private subnet created in addition to single NAT Gateway.
-Hosts within the private subnet can be reached through the bastion host.
+There are 2 private subnets created in addition to 2 public subnets, each with a dedicated NAT Gateway.
+Hosts within the private subnets can be reached through the bastion host.
 
 NOTE: You may want to have a look at the [NAT as a bastion](../natbastion/README.md "NAT as a bastion example") example.
 

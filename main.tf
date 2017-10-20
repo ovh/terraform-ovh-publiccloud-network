@@ -172,7 +172,7 @@ resource "openstack_networking_subnet_v2" "private_subnets" {
 resource "openstack_networking_port_v2" "port_nats" {
   provider = "openstack.${var.region}"
 
-  count = "${local.enable_nat ? (var.single_nat_gateway ? 1 : length(var.public_subnets)) : 0}"
+  count = "${local.enable_nat ? (var.single_nat_gateway ? 1 : length(var.private_subnets)) : 0}"
 
   name       = "${var.name}_port_nat_${count.index}"
   network_id = "${element(coalescelist(openstack_networking_network_v2.net.*.id, list(var.network_id)), 0)}"
@@ -196,7 +196,7 @@ provider "ignition" {
 # set route metric to 2048 in order to privilege eth0 default routes (with a default metric of 1024) over eth1
 ## also enables ip forward to act as a nat
 data "ignition_networkd_unit" "nat_eth1" {
-  count = "${local.enable_nat ? (var.single_nat_gateway ? 1 : length(var.public_subnets)) : 0}"
+  count = "${local.enable_nat ? (var.single_nat_gateway ? 1 : length(var.private_subnets)) : 0}"
   name  = "20-eth1.network"
 
   ## Address is set with the global network CIDR block
@@ -244,10 +244,15 @@ data "ignition_user" "nat_core" {
 }
 
 data "ignition_config" "nat" {
-  count = "${local.enable_nat ? (var.single_nat_gateway ? 1 : length(var.public_subnets)) : 0}"
+  count = "${local.enable_nat ? (var.single_nat_gateway ? 1 : length(var.private_subnets)) : 0}"
 
   networkd = ["${data.ignition_networkd_unit.nat_eth0.id}", "${element(data.ignition_networkd_unit.nat_eth1.*.id, count.index)}"]
   users    = ["${data.ignition_user.nat_core.*.id}"]
+}
+
+resource "openstack_compute_servergroup_v2" "nats" {
+  name     = "${var.name}-nat-servergroup"
+  policies = ["anti-affinity"]
 }
 
 # nat instances are coreos boxes. meaning they will auto restart whenever an update
@@ -257,7 +262,7 @@ data "ignition_config" "nat" {
 # wise to benefit security updates on this kind of service instances.
 # here we chose to suffer intermittent internet broken link.
 resource "openstack_compute_instance_v2" "nats" {
-  count = "${local.enable_nat ? (var.single_nat_gateway ? 1 : length(var.public_subnets)) : 0}"
+  count = "${local.enable_nat ? (var.single_nat_gateway ? 1 : length(var.private_subnets)) : 0}"
 
   provider = "openstack.${var.region}"
 
@@ -274,6 +279,10 @@ resource "openstack_compute_instance_v2" "nats" {
 
   network {
     port = "${element(openstack_networking_port_v2.port_nats.*.id, count.index)}"
+  }
+
+  scheduler_hints {
+    group = "${openstack_compute_servergroup_v2.nats.id}"
   }
 
   metadata = "${var.metadata}"
