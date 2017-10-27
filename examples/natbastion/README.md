@@ -6,6 +6,11 @@ Configuration in this directory creates set of openstack resources which may be 
 There's 1 private subnet created in addition to single NAT Gateway.
 Hosts within the private subnet can be reached through the NAT gateway which acts as a bastion host.
 
+Pre-Requisites
+===
+
+This example assumes you already have attached your openstack project to your OVH VRack.
+
 Usage
 =====
 

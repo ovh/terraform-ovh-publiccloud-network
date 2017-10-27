@@ -1,3 +1,6 @@
+## This example requires that you already have attached your openstack project
+## your OVH Vrack
+
 provider "ovh" {
   endpoint = "ovh-eu"
 }
@@ -12,14 +15,15 @@ module "network" {
   source = "../.."
 
   project_id      = "${var.project_id}"
-  vrack_id        = "${var.vrack_id}"
+  attach_vrack    = false
   name            = "mynetwork"
-  cidr            = "10.0.0.0/16"
-  region          = "GRA3"
-  public_subnets  = ["10.0.0.0/24"]
-  private_subnets = ["10.0.1.0/24"]
+  cidr            = "10.1.0.0/16"
+  region          = "SBG3"
+  public_subnets  = ["10.1.0.0/24"]
+  private_subnets = ["10.1.1.0/24", "10.1.2.0/24"]
 
   enable_nat_gateway = true
+  single_nat_gateway = true
   nat_as_bastion     = true
 
   ssh_public_keys = ["${openstack_compute_keypair_v2.keypair.public_key}"]

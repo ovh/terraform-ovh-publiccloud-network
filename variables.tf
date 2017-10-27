@@ -7,9 +7,13 @@ variable "vrack_id" {
   default     = ""
 }
 
+variable "attach_vrack" {
+  description = "Should be true if you want to attach your openstack project to your OVH VRack."
+  default     = true
+}
+
 variable "project_id" {
-  description = "The id of the openstack project. This is required if network_id is not specified."
-  default     = ""
+  description = "The id of the openstack project. This is always required even if not used in order to avoid future breaking change."
 }
 
 variable "network_id" {

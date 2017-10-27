@@ -24,7 +24,7 @@ provider "openstack" {
 }
 
 resource "ovh_vrack_publiccloud_attachment" "attach" {
-  count      = "${var.network_id == "" ? 1 : 0}"
+  count      = "${var.attach_vrack && var.network_id == "" ? 1 : 0}"
   vrack_id   = "${var.vrack_id}"
   project_id = "${var.project_id}"
 }
