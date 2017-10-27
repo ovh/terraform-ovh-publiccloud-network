@@ -2,6 +2,10 @@ provider "ovh" {
   endpoint = "ovh-eu"
 }
 
+provider "openstack" {
+  region = "${var.region}"
+}
+
 # Import Keypair
 resource "openstack_compute_keypair_v2" "keypair" {
   name       = "my-keypair"
@@ -15,7 +19,7 @@ module "network" {
   vrack_id        = "${var.vrack_id}"
   name            = "mynetwork"
   cidr            = "10.0.0.0/16"
-  region          = "GRA3"
+  region          = "${var.region}"
   public_subnets  = ["10.0.0.0/24", "10.0.10.0/24"]
   private_subnets = ["10.0.1.0/24", "10.0.11.0/24"]
 

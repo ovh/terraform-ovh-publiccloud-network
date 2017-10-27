@@ -1,13 +1,16 @@
 ## This example requires that you already have attached your openstack project
 ## your OVH Vrack
-
 provider "ovh" {
   endpoint = "ovh-eu"
 }
 
+provider "openstack" {
+  region = "${var.region}"
+}
+
 # Import Keypair
 resource "openstack_compute_keypair_v2" "keypair" {
-  name       = "my-keypair"
+  name       = "example-natbastion-keypair"
   public_key = "${file("~/.ssh/id_rsa.pub")}"
 }
 
@@ -16,9 +19,9 @@ module "network" {
 
   project_id      = "${var.project_id}"
   attach_vrack    = false
-  name            = "mynetwork"
+  name            = "example-natbastion-network"
   cidr            = "10.1.0.0/16"
-  region          = "SBG3"
+  region          = "${var.region}"
   public_subnets  = ["10.1.0.0/24"]
   private_subnets = ["10.1.1.0/24", "10.1.2.0/24"]
 
@@ -35,7 +38,7 @@ module "network" {
 }
 
 resource "openstack_networking_port_v2" "port_private_instance" {
-  name           = "port_private_instance"
+  name           = "example-natbastion-port-instance"
   network_id     = "${module.network.network_id}"
   admin_state_up = "true"
 
@@ -45,7 +48,7 @@ resource "openstack_networking_port_v2" "port_private_instance" {
 }
 
 resource "openstack_compute_instance_v2" "my_private_instance" {
-  name        = "my_private_instance"
+  name        = "example-natbastion-instance"
   image_name  = "Centos 7"
   flavor_name = "s1-8"
   key_pair    = "${openstack_compute_keypair_v2.keypair.name}"
