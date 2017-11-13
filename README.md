@@ -59,4 +59,4 @@ Module managed by [Yann Degat](https://github.com/yanndegat).
 
 ## License
 
-Apache 2 Licensed. See LICENSE for full details.
+OVH Licensed. See [LICENSE](./LICENSE) for full details.
