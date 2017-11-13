@@ -13,7 +13,7 @@ These types of resources are supported:
 
 # Network Topology Example
 
-![](./network_topology_example.png?raw=true)
+![](https://github.com/ovh/terraform-ovh-publiccloud-network/tree/master/network_topology_example.png?raw=true)
 
 # Usage
 
@@ -44,14 +44,14 @@ module "network" {
 
 ## Examples
 
-* [Simple Network](./examples/simple/README.md)
-* [Multi Region Network](./examples/multiregion/README.md)
-* [Simple Network with bastion host](./examples/bastion/README.md)
-* [Simple Network with NAT Gateway as a bastion host](./examples/natbastion/README.md)
+* [Simple Network](https://github.com/ovh/terraform-ovh-publiccloud-network/tree/master/examples/simple/README.md)
+* [Multi Region Network](https://github.com/ovh/terraform-ovh-publiccloud-network/tree/master/examples/multiregion/README.md)
+* [Simple Network with bastion host](https://github.com/ovh/terraform-ovh-publiccloud-network/tree/master/examples/bastion/README.md)
+* [Simple Network with NAT Gateway as a bastion host](https://github.com/ovh/terraform-ovh-publiccloud-network/tree/master/examples/natbastion/README.md)
 
 ## How do I contribute to this Module?
 
-Contributions are very welcome! Check out the [Contribution Guidelines](CONTRIBUTING.md) for instructions.
+Contributions are very welcome! Check out the [Contribution Guidelines](https://github.com/ovh/terraform-ovh-publiccloud-network/tree/master/CONTRIBUTING.md) for instructions.
 
 ## Authors
 
@@ -59,4 +59,4 @@ Module managed by [Yann Degat](https://github.com/yanndegat).
 
 ## License
 
-OVH Licensed. See [LICENSE](./LICENSE) for full details.
+OVH Licensed. See [LICENSE](https://github.com/ovh/terraform-ovh-publiccloud-network/tree/master/LICENSE) for full details.

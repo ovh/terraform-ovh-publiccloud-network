@@ -6,7 +6,7 @@ Configuration in this directory creates set of openstack resources to boot a mul
 There are 2 private subnets created in addition to 2 public subnets, each with a dedicated NAT Gateway.
 Hosts within the private subnets can be reached through the bastion host.
 
-NOTE: You may want to have a look at the [NAT as a bastion](../natbastion/README.md "NAT as a bastion example") example.
+NOTE: You may want to have a look at the [NAT as a bastion]((https://github.com/ovh/terraform-ovh-publiccloud-network/tree/master/examples/natbastion/README.md "NAT as a bastion example") example.
 
 Usage
 =====
