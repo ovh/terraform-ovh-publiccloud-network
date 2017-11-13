@@ -19,7 +19,7 @@ These types of resources are supported:
 
 ```hcl
 module "network" {
-  source = "terraform-ovh-modules/publiccloud_network/ovh"
+  source = "ovh/publiccloud-network/ovh"
 
   project_id      = "XXX"
   vrack_id        = "YYY"

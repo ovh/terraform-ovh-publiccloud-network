@@ -3,7 +3,7 @@ provider "ovh" {
 }
 
 module "network" {
-  source = "../.."
+  source = "ovh/publiccloud-network/ovh"
 
   project_id = "${var.project_id}"
   vrack_id   = "${var.vrack_id}"
