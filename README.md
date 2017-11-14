@@ -13,7 +13,7 @@ These types of resources are supported:
 
 # Network Topology Example
 
-![](https://github.com/ovh/terraform-ovh-publiccloud-network/tree/master/network_topology_example.png?raw=true)
+![](https://github.com/ovh/terraform-ovh-publiccloud-network/blob/master/network_topology_example.png?raw=true)
 
 # Usage
 
