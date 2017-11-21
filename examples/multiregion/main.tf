@@ -82,6 +82,10 @@ module "network_GRA3" {
     Terraform   = "true"
     Environment = "prod"
   }
+
+  providers = {
+    "openstack" = "openstack.GRA3"
+  }
 }
 
 module "network_SBG3" {
@@ -102,6 +106,10 @@ module "network_SBG3" {
   metadata = {
     Terraform   = "true"
     Environment = "prod"
+  }
+
+  providers = {
+    "openstack" = "openstack.SBG3"
   }
 }
 
@@ -124,4 +132,9 @@ module "network_DE1" {
     Terraform   = "true"
     Environment = "prod"
   }
+
+  providers = {
+    "openstack" = "openstack.DE1"
+  }
+
 }

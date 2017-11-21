@@ -4,6 +4,7 @@ provider "ovh" {
 
 provider "openstack" {
   region = "${var.region}"
+  alias  = "${var.region}"
 }
 
 # Import Keypair
@@ -32,12 +33,16 @@ module "network" {
     Terraform   = "true"
     Environment = "Dev"
   }
+
+  providers = {
+    "openstack" = "openstack.${var.region}"
+  }
 }
 
 resource "openstack_networking_port_v2" "port_private_instance" {
-  name               = "port_private_instance"
-  network_id         = "${module.network.network_id}"
-  admin_state_up     = "true"
+  name           = "port_private_instance"
+  network_id     = "${module.network.network_id}"
+  admin_state_up = "true"
 
   fixed_ip {
     subnet_id = "${module.network.private_subnets[0]}"

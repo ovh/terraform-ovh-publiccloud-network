@@ -9,6 +9,10 @@
 ## - the 2nd ip will be reserved for nat gateways (usually .1)
 ## - the 3rd ip will be reserved for bastion host (usually .2)
 ## - the allocation pools will start at the 4th ip (usually .3)
+terraform {
+  required_version = ">= 0.11.0"
+}
+
 locals {
   re_cap_cidr_block  = "/[^/]*/([0-9]*)$/"
   network_cidr_block = "${replace(var.cidr, local.re_cap_cidr_block, "$1")}"
@@ -16,11 +20,6 @@ locals {
   enable_bastion = "${var.enable_bastion_host && length(var.public_subnets) > 0 && length(var.ssh_public_keys) > 0}"
   enable_nat     = "${var.enable_nat_gateway && length(var.public_subnets) > 0}"
   nat_ssh_keys   = "${compact(split(",", var.nat_as_bastion && local.enable_nat && length(var.ssh_public_keys) > 0 ? join(",", var.ssh_public_keys) : ""))}"
-}
-
-provider "openstack" {
-  alias  = "${var.region}"
-  region = "${var.region}"
 }
 
 resource "ovh_vrack_publiccloud_attachment" "attach" {
@@ -33,8 +32,6 @@ resource "ovh_vrack_publiccloud_attachment" "attach" {
 # API, you may want to have a look at the multiregion example to see how
 # you can bootstrap cross regions networks
 resource "openstack_networking_network_v2" "net" {
-  provider = "openstack.${var.region}"
-
   count          = "${var.network_id == "" ? 1 : 0}"
   name           = "${var.name}"
   admin_state_up = "true"
@@ -42,15 +39,11 @@ resource "openstack_networking_network_v2" "net" {
 }
 
 resource "openstack_networking_secgroup_v2" "nat_sg" {
-  provider = "openstack.${var.region}"
-
   name        = "${var.name}_nat_sg"
   description = "${var.name} security group for nat instances"
 }
 
 resource "openstack_networking_secgroup_rule_v2" "in_icmp" {
-  provider = "openstack.${var.region}"
-
   direction         = "ingress"
   ethertype         = "IPv4"
   protocol          = "icmp"
@@ -59,8 +52,6 @@ resource "openstack_networking_secgroup_rule_v2" "in_icmp" {
 }
 
 resource "openstack_networking_secgroup_rule_v2" "in_tcp" {
-  provider = "openstack.${var.region}"
-
   direction         = "ingress"
   ethertype         = "IPv4"
   protocol          = "tcp"
@@ -69,8 +60,6 @@ resource "openstack_networking_secgroup_rule_v2" "in_tcp" {
 }
 
 resource "openstack_networking_secgroup_rule_v2" "in_udp" {
-  provider = "openstack.${var.region}"
-
   direction         = "ingress"
   ethertype         = "IPv4"
   protocol          = "udp"
@@ -79,7 +68,6 @@ resource "openstack_networking_secgroup_rule_v2" "in_udp" {
 }
 
 resource "openstack_networking_secgroup_rule_v2" "nat_in_ssh" {
-  provider = "openstack.${var.region}"
   count    = "${var.nat_as_bastion ? 1  : 0 }"
 
   direction         = "ingress"
@@ -92,14 +80,11 @@ resource "openstack_networking_secgroup_rule_v2" "nat_in_ssh" {
 }
 
 resource "openstack_networking_secgroup_v2" "bastion_sg" {
-  provider = "openstack.${var.region}"
-
   name        = "${var.name}_bastion_sg"
   description = "${var.name} security group for bastion hosts"
 }
 
 resource "openstack_networking_secgroup_rule_v2" "bastion_in_ssh" {
-  provider = "openstack.${var.region}"
   count    = "${local.enable_bastion ? 1  : 0 }"
 
   direction         = "ingress"
@@ -112,8 +97,6 @@ resource "openstack_networking_secgroup_rule_v2" "bastion_in_ssh" {
 }
 
 resource "openstack_networking_subnet_v2" "public_subnets" {
-  provider = "openstack.${var.region}"
-
   count = "${length(var.public_subnets)}"
 
   name       = "${var.name}_public_subnet_${count.index}"
@@ -139,8 +122,6 @@ resource "openstack_networking_subnet_v2" "public_subnets" {
 }
 
 resource "openstack_networking_subnet_v2" "private_subnets" {
-  provider = "openstack.${var.region}"
-
   count      = "${length(var.private_subnets)}"
   name       = "${var.name}_subnet_${count.index}"
   network_id = "${element(coalescelist(openstack_networking_network_v2.net.*.id, list(var.network_id)), 0)}"
@@ -170,8 +151,6 @@ resource "openstack_networking_subnet_v2" "private_subnets" {
 }
 
 resource "openstack_networking_port_v2" "port_nats" {
-  provider = "openstack.${var.region}"
-
   count = "${local.enable_nat ? (var.single_nat_gateway ? 1 : length(var.private_subnets)) : 0}"
 
   name       = "${var.name}_port_nat_${count.index}"
@@ -264,8 +243,6 @@ resource "openstack_compute_servergroup_v2" "nats" {
 resource "openstack_compute_instance_v2" "nats" {
   count = "${local.enable_nat ? (var.single_nat_gateway ? 1 : length(var.private_subnets)) : 0}"
 
-  provider = "openstack.${var.region}"
-
   name        = "${var.name}_nat_gw_${count.index}"
   image_name  = "CoreOS Stable"
   flavor_name = "${lookup(var.nat_instance_flavor_names, var.region)}"
@@ -289,8 +266,6 @@ resource "openstack_compute_instance_v2" "nats" {
 }
 
 resource "openstack_networking_port_v2" "port_bastion" {
-  provider = "openstack.${var.region}"
-
   count = "${local.enable_bastion ? 1 : 0 }"
 
   name               = "${var.name}_bastion_port"
@@ -359,7 +334,6 @@ data "ignition_config" "bastion" {
 # wise to benefit security updates on this kind of service instances.
 # here we chose to suffer intermittent internet broken link.
 resource "openstack_compute_instance_v2" "bastion" {
-  provider = "openstack.${var.region}"
   count    = "${local.enable_bastion ? 1 : 0 }"
 
   name        = "${var.name}_bastion"
