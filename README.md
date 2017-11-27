@@ -59,4 +59,4 @@ Module managed by [Yann Degat](https://github.com/yanndegat).
 
 ## License
 
-OVH Licensed. See [LICENSE](https://github.com/ovh/terraform-ovh-publiccloud-network/tree/master/LICENSE) for full details.
+The 3-Clause BSD License. See [LICENSE](https://github.com/ovh/terraform-ovh-publiccloud-network/tree/master/LICENSE) for full details.
