@@ -17,6 +17,14 @@ provider "openstack" {
   version = "~> 1.0"
 }
 
+provider "ignition" {
+  version = "~> 1.0"
+}
+
+provider "ovh" {
+  version = "~> 0.1"
+}
+
 locals {
   re_cap_cidr_block  = "/[^/]*/([0-9]*)$/"
   network_cidr_block = "${replace(var.cidr, local.re_cap_cidr_block, "$1")}"
@@ -168,11 +176,6 @@ resource "openstack_networking_port_v2" "port_nats" {
     subnet_id  = "${element(openstack_networking_subnet_v2.public_subnets.*.id, count.index)}"
     ip_address = "${cidrhost(var.public_subnets[count.index], 1)}"
   }
-}
-
-# ovh actual coreos stable version requires ignition v0.1.0
-provider "ignition" {
-  version = "0.1.0"
 }
 
 # as of today, networks get a dhcp route on 0.0.0.0/0 which could conflicts with pub networks routes
