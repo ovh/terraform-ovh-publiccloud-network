@@ -4,6 +4,7 @@ provider "ovh" {
 
 module "network" {
   source = "ovh/publiccloud-network/ovh"
+  version = ">= 0.0.8"
 
   project_id = "${var.project_id}"
   vrack_id   = "${var.vrack_id}"

@@ -64,9 +64,11 @@ data "openstack_networking_network_v2" "net_DE1" {
 ##################################################################
 
 module "network_GRA3" {
-  source = "ovh/publiccloud-network/ovh"
+  source  = "ovh/publiccloud-network/ovh"
+  version = ">= 0.0.8"
 
   network_id = "${data.openstack_networking_network_v2.net_GRA3.id}"
+  project_id = "${var.project_id}"
 
   name = "mynetwork"
   cidr = "10.0.0.0/16"
@@ -89,9 +91,11 @@ module "network_GRA3" {
 }
 
 module "network_SBG3" {
-  source = "ovh/publiccloud-network/ovh"
+  source  = "ovh/publiccloud-network/ovh"
+  version = ">= 0.0.8"
 
   network_id = "${data.openstack_networking_network_v2.net_SBG3.id}"
+  project_id = "${var.project_id}"
 
   name = "mynetwork"
   cidr = "10.0.0.0/16"
@@ -114,9 +118,11 @@ module "network_SBG3" {
 }
 
 module "network_DE1" {
-  source = "ovh/publiccloud-network/ovh"
+  source  = "ovh/publiccloud-network/ovh"
+  version = ">= 0.0.8"
 
   network_id = "${data.openstack_networking_network_v2.net_DE1.id}"
+  project_id = "${var.project_id}"
 
   name = "mynetwork"
   cidr = "10.0.0.0/16"
@@ -136,5 +142,4 @@ module "network_DE1" {
   providers = {
     "openstack" = "openstack.DE1"
   }
-
 }
