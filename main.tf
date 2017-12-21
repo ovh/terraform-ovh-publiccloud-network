@@ -35,7 +35,7 @@ locals {
 }
 
 resource "ovh_vrack_publiccloud_attachment" "attach" {
-  count      = "${var.attach_vrack ? 1 : 0}"
+  count      = "${var.attach_vrack && var.vrack_id != "" ? 1 : 0}"
   vrack_id   = "${var.vrack_id}"
   project_id = "${var.project_id}"
 }
