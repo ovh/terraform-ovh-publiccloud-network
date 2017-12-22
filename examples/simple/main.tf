@@ -3,14 +3,15 @@ provider "ovh" {
 }
 
 module "network" {
-  source = "ovh/publiccloud-network/ovh"
-  version = ">= 0.0.8"
+#  source = "ovh/publiccloud-network/ovh"
+#  version = ">= 0.0.10"
+  source = "../.."
 
   project_id = "${var.project_id}"
   vrack_id   = "${var.vrack_id}"
 
   attach_vrack = "${var.attach_vrack}"
-  name         = "mynetwork"
+  name         = "mysimplenetwork"
   cidr         = "10.0.0.0/16"
 
   region          = "${var.region}"

@@ -10,7 +10,7 @@ output "bastion_security_group_id" {
 
 output "network_id" {
   description = "The id of the network."
-  value       = "${element(coalescelist(openstack_networking_network_v2.net.*.id, list(var.network_id)), 0)}"
+  value       = "${local.network_id}"
 }
 
 output "public_subnets" {

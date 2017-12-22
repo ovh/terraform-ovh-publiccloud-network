@@ -12,14 +12,34 @@ variable "attach_vrack" {
   default     = true
 }
 
+variable "create_network" {
+  description = "Should be false if `network_id` is specified."
+  default     = true
+}
+
 variable "project_id" {
   description = "The id of the openstack project. This is always required even if not used in order to avoid future breaking change."
 }
 
 variable "network_id" {
   description = <<DESC
-The network id used to create the subnets. If not specified, an openstack network
- will be created through the openstack API.
+The network id of the existing network used to create the subnets.
+Either `network_id` or `network_name` is required if `create_network`
+is set to false.
+
+NOTE: As of today, the network has to pre-created outside this module
+if you want to do cross regions networking with the vrack.
+See "multiregion" example.
+DESC
+
+  default = ""
+}
+
+variable "network_name" {
+  description = <<DESC
+The network name of the existing network used to create the subnets.
+Either `network_id` or `network_name` is required if `create_network`
+is set to false.
 
 NOTE: As of today, the network has to pre-created outside this module
 if you want to do cross regions networking with the vrack.

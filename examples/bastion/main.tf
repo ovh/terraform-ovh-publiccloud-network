@@ -14,12 +14,13 @@ resource "openstack_compute_keypair_v2" "keypair" {
 }
 
 module "network" {
-  source = "ovh/publiccloud-network/ovh"
-  version = ">= 0.0.8"
+#  source = "ovh/publiccloud-network/ovh"
+#  version = ">= 0.0.10"
+  source = "../.."
 
   project_id      = "${var.project_id}"
   vrack_id        = "${var.vrack_id}"
-  name            = "mynetwork"
+  name            = "mybastionnetwork"
   cidr            = "10.0.0.0/16"
   region          = "${var.region}"
   public_subnets  = ["10.0.0.0/24", "10.0.10.0/24"]

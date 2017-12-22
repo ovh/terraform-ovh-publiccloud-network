@@ -18,7 +18,6 @@ To run this example you need to execute:
 
 ```bash
 $ terraform init
-$ terraform plan -var project_id=... -var vrack_id=...
 $ terraform apply -var project_id=... -var vrack_id=...
 ```
 

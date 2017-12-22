@@ -13,11 +13,6 @@ To run this example you need to execute:
 
 ```bash
 $ terraform init
-$ ## NOTE: you must create the network before applying the rest of the configuration
-$ ##       this step will be removed in a further release. 
-$ terraform plan -var project_id=... -var vrack_id=... -target ovh_publiccloud_private_network.net
-$ terraform apply -var project_id=... -var vrack_id=... -target ovh_publiccloud_private_network.net
-$ terraform plan -var project_id=... -var vrack_id=...
 $ terraform apply -var project_id=... -var vrack_id=...
 ```
 

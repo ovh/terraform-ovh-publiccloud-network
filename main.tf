@@ -32,6 +32,7 @@ locals {
   enable_bastion = "${var.enable_bastion_host && length(var.public_subnets) > 0 && length(var.ssh_public_keys) > 0}"
   enable_nat     = "${var.enable_nat_gateway && length(var.public_subnets) > 0}"
   nat_ssh_keys   = "${compact(split(",", var.nat_as_bastion && local.enable_nat && length(var.ssh_public_keys) > 0 ? join(",", var.ssh_public_keys) : ""))}"
+  network_id     = "${element(coalescelist(openstack_networking_network_v2.net.*.id, data.openstack_networking_network_v2.preexisting_net.*.id, list("")), 0)}"
 }
 
 resource "ovh_vrack_publiccloud_attachment" "attach" {
@@ -40,11 +41,14 @@ resource "ovh_vrack_publiccloud_attachment" "attach" {
   project_id = "${var.project_id}"
 }
 
-# NOTE: you won't be able to set a vlan id/segmentation id through the openstack
-# API, you may want to have a look at the multiregion example to see how
-# you can bootstrap cross regions networks
+data "openstack_networking_network_v2" "preexisting_net" {
+  count      = "${var.create_network ? 0 : 1}"
+  name       = "${var.network_name}"
+  network_id = "${var.network_id}"
+}
+
 resource "openstack_networking_network_v2" "net" {
-  count          = "${var.network_id == "" ? 1 : 0}"
+  count          = "${var.create_network && var.network_id == "" && var.network_name == "" ? 1 : 0}"
   name           = "${var.name}"
   admin_state_up = "true"
   depends_on     = ["ovh_vrack_publiccloud_attachment.attach"]
@@ -80,7 +84,7 @@ resource "openstack_networking_secgroup_rule_v2" "in_udp" {
 }
 
 resource "openstack_networking_secgroup_rule_v2" "nat_in_ssh" {
-  count    = "${var.nat_as_bastion ? 1  : 0 }"
+  count = "${var.nat_as_bastion ? 1  : 0 }"
 
   direction         = "ingress"
   ethertype         = "IPv4"
@@ -97,7 +101,7 @@ resource "openstack_networking_secgroup_v2" "bastion_sg" {
 }
 
 resource "openstack_networking_secgroup_rule_v2" "bastion_in_ssh" {
-  count    = "${local.enable_bastion ? 1  : 0 }"
+  count = "${local.enable_bastion ? 1  : 0 }"
 
   direction         = "ingress"
   ethertype         = "IPv4"
@@ -112,7 +116,7 @@ resource "openstack_networking_subnet_v2" "public_subnets" {
   count = "${length(var.public_subnets)}"
 
   name       = "${var.name}_public_subnet_${count.index}"
-  network_id = "${element(coalescelist(openstack_networking_network_v2.net.*.id, list(var.network_id)), 0)}"
+  network_id = "${local.network_id}"
   cidr       = "${var.public_subnets[count.index]}"
   ip_version = 4
 
@@ -136,7 +140,7 @@ resource "openstack_networking_subnet_v2" "public_subnets" {
 resource "openstack_networking_subnet_v2" "private_subnets" {
   count      = "${length(var.private_subnets)}"
   name       = "${var.name}_subnet_${count.index}"
-  network_id = "${element(coalescelist(openstack_networking_network_v2.net.*.id, list(var.network_id)), 0)}"
+  network_id = "${local.network_id}"
   cidr       = "${element(var.private_subnets, count.index)}"
   ip_version = 4
 
@@ -166,7 +170,7 @@ resource "openstack_networking_port_v2" "port_nats" {
   count = "${local.enable_nat ? (var.single_nat_gateway ? 1 : length(var.private_subnets)) : 0}"
 
   name       = "${var.name}_port_nat_${count.index}"
-  network_id = "${element(coalescelist(openstack_networking_network_v2.net.*.id, list(var.network_id)), 0)}"
+  network_id = "${local.network_id}"
 
   admin_state_up = "true"
 
@@ -276,7 +280,7 @@ resource "openstack_networking_port_v2" "port_bastion" {
   count = "${local.enable_bastion ? 1 : 0 }"
 
   name               = "${var.name}_bastion_port"
-  network_id         = "${element(coalescelist(openstack_networking_network_v2.net.*.id, list(var.network_id)), 0)}"
+  network_id         = "${local.network_id}"
   admin_state_up     = "true"
   security_group_ids = ["${openstack_networking_secgroup_v2.bastion_sg.id}"]
 
@@ -341,7 +345,7 @@ data "ignition_config" "bastion" {
 # wise to benefit security updates on this kind of service instances.
 # here we chose to suffer intermittent internet broken link.
 resource "openstack_compute_instance_v2" "bastion" {
-  count    = "${local.enable_bastion ? 1 : 0 }"
+  count = "${local.enable_bastion ? 1 : 0 }"
 
   name        = "${var.name}_bastion"
   image_name  = "CoreOS Stable"
