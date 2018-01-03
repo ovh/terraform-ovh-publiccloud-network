@@ -129,7 +129,7 @@ resource "openstack_networking_subnet_v2" "public_subnets" {
   # routes properly on each VM. see nat's ignition config for an example
   no_gateway = true
 
-  dns_nameservers = "${var.dns_nameservers}"
+  dns_nameservers = ["${var.dns_nameservers}"]
 
   allocation_pools {
     start = "${cidrhost(var.public_subnets[count.index],2)}"
@@ -153,7 +153,7 @@ resource "openstack_networking_subnet_v2" "private_subnets" {
   # routes properly on each VM. see nat's ignition config for an example
   no_gateway = true
 
-  dns_nameservers = "${var.dns_nameservers}"
+  dns_nameservers = ["${var.dns_nameservers}"]
 
   allocation_pools {
     start = "${cidrhost(var.private_subnets[count.index],2)}"
