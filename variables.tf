@@ -156,7 +156,7 @@ variable "ovh_pub_nets" {
 variable "dns_nameservers" {
   type        = "list"
   description = "The list of dns servers to be pushed by dhcp"
-  default     = ["8.8.8.8", "8.8.4.4"]
+  default     = ["213.186.33.99", "8.8.8.8"]
 }
 
 variable "metadata" {
