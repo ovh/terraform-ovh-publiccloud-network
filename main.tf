@@ -15,6 +15,7 @@ terraform {
 
 provider "openstack" {
   version = "~> 1.0"
+  region  = "${var.region}"
 }
 
 provider "ignition" {
