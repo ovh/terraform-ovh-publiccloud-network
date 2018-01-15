@@ -29,10 +29,7 @@ provider "ovh" {
 locals {
   re_cap_cidr_block  = "/[^/]*/([0-9]*)$/"
   network_cidr_block = "${replace(var.cidr, local.re_cap_cidr_block, "$1")}"
-
-  enable_bastion = "${var.enable_bastion_host && length(var.public_subnets) > 0 && length(var.ssh_public_keys) > 0}"
-  enable_nat     = "${var.enable_nat_gateway && length(var.public_subnets) > 0}"
-  nat_ssh_keys   = "${compact(split(",", var.nat_as_bastion && local.enable_nat && length(var.ssh_public_keys) > 0 ? join(",", var.ssh_public_keys) : ""))}"
+  nat_ssh_keys   = "${compact(split(",", var.nat_as_bastion && var.enable_nat_gateway && length(var.ssh_public_keys) > 0 ? join(",", var.ssh_public_keys) : ""))}"
   network_id     = "${element(coalescelist(openstack_networking_network_v2.net.*.id, data.openstack_networking_network_v2.preexisting_net.*.id, list("")), 0)}"
 }
 
@@ -102,7 +99,7 @@ resource "openstack_networking_secgroup_v2" "bastion_sg" {
 }
 
 resource "openstack_networking_secgroup_rule_v2" "bastion_in_ssh" {
-  count = "${local.enable_bastion ? 1  : 0 }"
+  count = "${var.enable_bastion_host ? 1  : 0 }"
 
   direction         = "ingress"
   ethertype         = "IPv4"
@@ -168,7 +165,7 @@ resource "openstack_networking_subnet_v2" "private_subnets" {
 }
 
 resource "openstack_networking_port_v2" "port_nats" {
-  count = "${local.enable_nat ? (var.single_nat_gateway ? 1 : length(var.private_subnets)) : 0}"
+  count = "${var.enable_nat_gateway ? (var.single_nat_gateway ? 1 : length(var.private_subnets)) : 0}"
 
   name       = "${var.name}_port_nat_${count.index}"
   network_id = "${local.network_id}"
@@ -187,7 +184,7 @@ resource "openstack_networking_port_v2" "port_nats" {
 # set route metric to 2048 in order to privilege eth0 default routes (with a default metric of 1024) over eth1
 ## also enables ip forward to act as a nat
 data "ignition_networkd_unit" "nat_eth1" {
-  count = "${local.enable_nat ? (var.single_nat_gateway ? 1 : length(var.private_subnets)) : 0}"
+  count = "${var.enable_nat_gateway ? (var.single_nat_gateway ? 1 : length(var.private_subnets)) : 0}"
   name  = "20-eth1.network"
 
   ## Address is set with the global network CIDR block
@@ -216,7 +213,7 @@ IGNITION
 }
 
 data "ignition_networkd_unit" "nat_eth0" {
-  count = "${local.enable_nat ? 1 : 0}"
+  count = "${var.enable_nat_gateway ? 1 : 0}"
   name  = "10-eth0.network"
 
   content = <<IGNITION
@@ -235,7 +232,7 @@ data "ignition_user" "nat_core" {
 }
 
 data "ignition_config" "nat" {
-  count = "${local.enable_nat ? (var.single_nat_gateway ? 1 : length(var.private_subnets)) : 0}"
+  count = "${var.enable_nat_gateway ? (var.single_nat_gateway ? 1 : length(var.private_subnets)) : 0}"
 
   networkd = ["${data.ignition_networkd_unit.nat_eth0.id}", "${element(data.ignition_networkd_unit.nat_eth1.*.id, count.index)}"]
   users    = ["${data.ignition_user.nat_core.*.id}"]
@@ -253,7 +250,7 @@ resource "openstack_compute_servergroup_v2" "nats" {
 # wise to benefit security updates on this kind of service instances.
 # here we chose to suffer intermittent internet broken link.
 resource "openstack_compute_instance_v2" "nats" {
-  count = "${local.enable_nat ? (var.single_nat_gateway ? 1 : length(var.private_subnets)) : 0}"
+  count = "${var.enable_nat_gateway ? (var.single_nat_gateway ? 1 : length(var.private_subnets)) : 0}"
 
   name        = "${var.name}_nat_gw_${count.index}"
   image_name  = "CoreOS Stable"
@@ -278,7 +275,7 @@ resource "openstack_compute_instance_v2" "nats" {
 }
 
 resource "openstack_networking_port_v2" "port_bastion" {
-  count = "${local.enable_bastion ? 1 : 0 }"
+  count = "${var.enable_bastion_host ? 1 : 0 }"
 
   name               = "${var.name}_bastion_port"
   network_id         = "${local.network_id}"
@@ -346,7 +343,7 @@ data "ignition_config" "bastion" {
 # wise to benefit security updates on this kind of service instances.
 # here we chose to suffer intermittent internet broken link.
 resource "openstack_compute_instance_v2" "bastion" {
-  count = "${local.enable_bastion ? 1 : 0 }"
+  count = "${var.enable_bastion_host ? 1 : 0 }"
 
   name        = "${var.name}_bastion"
   image_name  = "CoreOS Stable"
