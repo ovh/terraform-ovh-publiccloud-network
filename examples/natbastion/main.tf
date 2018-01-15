@@ -6,7 +6,6 @@ provider "ovh" {
 
 provider "openstack" {
   region = "${var.region}"
-  alias  = "${var.region}"
 }
 
 # Import Keypair
@@ -37,10 +36,6 @@ module "network" {
   metadata = {
     Terraform   = "true"
     Environment = "Dev"
-  }
-
-  providers = {
-    "openstack" = "openstack.${var.region}"
   }
 }
 

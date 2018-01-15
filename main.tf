@@ -29,8 +29,8 @@ provider "ovh" {
 locals {
   re_cap_cidr_block  = "/[^/]*/([0-9]*)$/"
   network_cidr_block = "${replace(var.cidr, local.re_cap_cidr_block, "$1")}"
-  nat_ssh_keys   = "${compact(split(",", var.nat_as_bastion && var.enable_nat_gateway && length(var.ssh_public_keys) > 0 ? join(",", var.ssh_public_keys) : ""))}"
-  network_id     = "${element(coalescelist(openstack_networking_network_v2.net.*.id, data.openstack_networking_network_v2.preexisting_net.*.id, list("")), 0)}"
+  nat_ssh_keys       = "${compact(split(",", var.nat_as_bastion && var.enable_nat_gateway && length(var.ssh_public_keys) > 0 ? join(",", var.ssh_public_keys) : ""))}"
+  network_id         = "${element(coalescelist(openstack_networking_network_v2.net.*.id, data.openstack_networking_network_v2.preexisting_net.*.id, list("")), 0)}"
 }
 
 resource "ovh_vrack_publiccloud_attachment" "attach" {
@@ -154,6 +154,7 @@ resource "openstack_networking_subnet_v2" "private_subnets" {
   dns_nameservers = ["${var.dns_nameservers}"]
 
   allocation_pools {
+    # dhcp agents will take an ip at the beginning of the allocation pool
     start = "${cidrhost(var.private_subnets[count.index],2)}"
     end   = "${cidrhost(var.private_subnets[count.index],-2)}"
   }
@@ -259,12 +260,12 @@ resource "openstack_compute_instance_v2" "nats" {
 
   # keep netwokrs in this order so that ext-net is set on eth0
   network {
-    name           = "${lookup(var.ovh_pub_nets, var.region)}"
     access_network = true
+    name = "${lookup(var.ovh_pub_nets, var.region)}"
   }
 
   network {
-    port = "${element(openstack_networking_port_v2.port_nats.*.id, count.index)}"
+    port           = "${element(openstack_networking_port_v2.port_nats.*.id, count.index)}"
   }
 
   scheduler_hints {
@@ -283,8 +284,7 @@ resource "openstack_networking_port_v2" "port_bastion" {
   security_group_ids = ["${openstack_networking_secgroup_v2.bastion_sg.id}"]
 
   fixed_ip {
-    subnet_id  = "${openstack_networking_subnet_v2.public_subnets.0.id}"
-    ip_address = "${cidrhost(var.public_subnets[count.index], 2)}"
+    subnet_id = "${element(openstack_networking_subnet_v2.public_subnets.*.id, 0)}"
   }
 }
 

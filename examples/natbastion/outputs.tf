@@ -9,7 +9,7 @@ $ cat >> ~/.ssh/config <<EOF
 Host ${openstack_compute_instance_v2.my_private_instance.name}
   User centos
   Hostname ${openstack_compute_instance_v2.my_private_instance.access_ip_v4}
-  ProxyCommand ssh core@${module.network.nat_public_ips[0]} ncat %h %p
+  ProxyCommand ssh core@${module.network.bastion_public_ip} ncat %h %p
 EOF
 ---
 

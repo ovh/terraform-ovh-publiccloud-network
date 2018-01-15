@@ -25,7 +25,7 @@ output "private_subnets" {
 
 output "nat_private_ips" {
   description = "The list of private ips of the nat gateways"
-  value       = ["${openstack_networking_port_v2.port_nats.*.fixed_ip.0.ip_address}"]
+  value       = ["${flatten(openstack_networking_port_v2.port_nats.*.all_fixed_ips)}"]
 }
 
 output "nat_public_ips" {
@@ -33,12 +33,7 @@ output "nat_public_ips" {
   value       = ["${openstack_compute_instance_v2.nats.*.access_ip_v4}"]
 }
 
-output "bastion_private_ip" {
-  description = "The private ip of the bastion host"
-  value       = "${join("", openstack_networking_port_v2.port_bastion.*.fixed_ip.0.ip_address)}"
-}
-
 output "bastion_public_ip" {
   description = "The public ip of the bastion host"
-  value       = "${join("", openstack_compute_instance_v2.bastion.*.access_ip_v4)}"
+  value       = "${join("", coalescelist(openstack_compute_instance_v2.bastion.*.access_ip_v4, openstack_compute_instance_v2.nats.*.access_ip_v4))}"
 }
