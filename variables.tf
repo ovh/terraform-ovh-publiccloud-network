@@ -93,6 +93,7 @@ variable "nat_instance_flavor_names" {
     BHS3 = "s1-2"
     WAW1 = "s1-2"
     DE1  = "s1-2"
+    UK1  = "s1-2"
   }
 }
 
@@ -109,6 +110,7 @@ variable "bastion_instance_flavor_names" {
     BHS3 = "s1-2"
     WAW1 = "s1-2"
     DE1  = "s1-2"
+    UK1  = "s1-2"
   }
 }
 
@@ -150,6 +152,7 @@ variable "ovh_pub_nets" {
     BHS1 = "Ext-Net"
     DE1  = "Ext-Net"
     WAW1 = "Ext-Net"
+    UK1  = "Ext-Net"
   }
 }
 
