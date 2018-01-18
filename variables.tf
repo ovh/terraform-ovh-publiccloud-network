@@ -80,6 +80,11 @@ variable "ssh_public_keys" {
   default = []
 }
 
+variable "nat_instance_flavor_name" {
+  description = "The flavor name region that will be used for NAT Gateways."
+  default     = ""
+}
+
 variable "nat_instance_flavor_names" {
   type = "map"
 
@@ -95,6 +100,11 @@ variable "nat_instance_flavor_names" {
     DE1  = "s1-2"
     UK1  = "s1-2"
   }
+}
+
+variable "bastion_instance_flavor_name" {
+  description = "The flavor name region that will be used for bastion hosts."
+  default     = ""
 }
 
 variable "bastion_instance_flavor_names" {

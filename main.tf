@@ -255,7 +255,7 @@ resource "openstack_compute_instance_v2" "nats" {
 
   name        = "${var.name}_nat_gw_${count.index}"
   image_name  = "CoreOS Stable"
-  flavor_name = "${lookup(var.nat_instance_flavor_names, var.region)}"
+  flavor_name = "${var.nat_instance_flavor_name != "" ? var.nat_instance_flavor_name : lookup(var.nat_instance_flavor_names, var.region)}"
   user_data   = "${element(data.ignition_config.nat.*.rendered,count.index)}"
 
   # keep netwokrs in this order so that ext-net is set on eth0
@@ -362,7 +362,7 @@ resource "openstack_compute_instance_v2" "bastion" {
 
   name        = "${var.name}_bastion"
   image_name  = "CoreOS Stable"
-  flavor_name = "${lookup(var.bastion_instance_flavor_names, var.region)}"
+  flavor_name = "${var.bastion_instance_flavor_name != "" ? var.bastion_instance_flavor_name : lookup(var.bastion_instance_flavor_names, var.region)}"
 
   user_data = "${data.ignition_config.bastion.rendered}"
 
