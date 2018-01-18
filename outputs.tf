@@ -20,7 +20,7 @@ output "public_subnets" {
 
 output "private_subnets" {
   description = "The ids of the newly created private subnets within the network"
-  value       = ["${openstack_networking_subnet_v2.private_subnets.*.id}"]
+  value       = ["${data.template_file.private_subnets_ids.*.rendered}"]
 }
 
 output "nat_private_ips" {

@@ -261,11 +261,11 @@ resource "openstack_compute_instance_v2" "nats" {
   # keep netwokrs in this order so that ext-net is set on eth0
   network {
     access_network = true
-    name = "${lookup(var.ovh_pub_nets, var.region)}"
+    name           = "${lookup(var.ovh_pub_nets, var.region)}"
   }
 
   network {
-    port           = "${element(openstack_networking_port_v2.port_nats.*.id, count.index)}"
+    port = "${element(openstack_networking_port_v2.port_nats.*.id, count.index)}"
   }
 
   scheduler_hints {
@@ -273,6 +273,21 @@ resource "openstack_compute_instance_v2" "nats" {
   }
 
   metadata = "${var.metadata}"
+}
+
+# This is somekind of a hack to ensure that when a private subnet id is output and made
+# available to other resources outside the module, the associated NAT GW has been spawned
+# thus ensuring internet connectivity.
+# Otherwise, instances and nat gws maybe spawned in parallel, resulting in possible failure of
+# instances cloudinit scripts.
+data "template_file" "private_subnets_ids" {
+  count    = "${length(var.private_subnets)}"
+  template = "$${private_subnet_id}"
+
+  vars {
+    nat_id            = "${element(openstack_compute_instance_v2.nats.*.id, count.index)}"
+    private_subnet_id = "${element(openstack_networking_subnet_v2.private_subnets.*.id, count.index)}"
+  }
 }
 
 resource "openstack_networking_port_v2" "port_bastion" {
