@@ -39,6 +39,11 @@ resource "ovh_vrack_publiccloud_attachment" "attach" {
   project_id = "${var.project_id}"
 }
 
+data "openstack_networking_network_v2" "ext_net" {
+  name      = "${lookup(var.ovh_pub_nets, var.region, var.default_ovh_pub_net)}"
+  tenant_id = ""
+}
+
 data "openstack_networking_network_v2" "preexisting_net" {
   count      = "${var.create_network ? 0 : 1}"
   name       = "${var.network_name}"
@@ -165,6 +170,15 @@ resource "openstack_networking_subnet_v2" "private_subnets" {
   }
 }
 
+resource "openstack_networking_port_v2" "public_port_nats" {
+  count = "${var.enable_nat_gateway ? (var.single_nat_gateway ? 1 : length(var.private_subnets)) : 0}"
+
+  name               = "${var.name}_public_port_nat_${count.index}"
+  network_id         = "${data.openstack_networking_network_v2.ext_net.id}"
+  admin_state_up     = "true"
+  security_group_ids = ["${openstack_networking_secgroup_v2.nat_sg.id}"]
+}
+
 resource "openstack_networking_port_v2" "port_nats" {
   count = "${var.enable_nat_gateway ? (var.single_nat_gateway ? 1 : length(var.private_subnets)) : 0}"
 
@@ -255,13 +269,13 @@ resource "openstack_compute_instance_v2" "nats" {
 
   name        = "${var.name}_nat_gw_${count.index}"
   image_name  = "CoreOS Stable"
-  flavor_name = "${var.nat_instance_flavor_name != "" ? var.nat_instance_flavor_name : lookup(var.nat_instance_flavor_names, var.region)}"
+  flavor_name = "${var.nat_instance_flavor_name != "" ? var.nat_instance_flavor_name : lookup(var.nat_instance_flavor_names, var.region, var.default_nat_instance_flavor_name)}"
   user_data   = "${element(data.ignition_config.nat.*.rendered,count.index)}"
 
   # keep netwokrs in this order so that ext-net is set on eth0
   network {
     access_network = true
-    name           = "${lookup(var.ovh_pub_nets, var.region)}"
+    port           = "${element(openstack_networking_port_v2.public_port_nats.*.id, count.index)}"
   }
 
   network {
@@ -288,6 +302,15 @@ data "template_file" "private_subnets_ids" {
     nat_id            = "${element(openstack_compute_instance_v2.nats.*.id, count.index)}"
     private_subnet_id = "${element(openstack_networking_subnet_v2.private_subnets.*.id, count.index)}"
   }
+}
+
+resource "openstack_networking_port_v2" "public_port_bastion" {
+  count = "${var.enable_bastion_host ? 1 : 0 }"
+
+  name               = "${var.name}_bastion_public_port"
+  network_id         = "${data.openstack_networking_network_v2.ext_net.id}"
+  admin_state_up     = "true"
+  security_group_ids = ["${openstack_networking_secgroup_v2.bastion_sg.id}"]
 }
 
 resource "openstack_networking_port_v2" "port_bastion" {
@@ -362,13 +385,13 @@ resource "openstack_compute_instance_v2" "bastion" {
 
   name        = "${var.name}_bastion"
   image_name  = "CoreOS Stable"
-  flavor_name = "${var.bastion_instance_flavor_name != "" ? var.bastion_instance_flavor_name : lookup(var.bastion_instance_flavor_names, var.region)}"
+  flavor_name = "${var.bastion_instance_flavor_name != "" ? var.bastion_instance_flavor_name : lookup(var.bastion_instance_flavor_names, var.region, var.default_bastion_instance_flavor_name)}"
 
   user_data = "${data.ignition_config.bastion.rendered}"
 
   # keep netwokrs in this order so that ext-net is set on eth0
   network {
-    name           = "${lookup(var.ovh_pub_nets, var.region)}"
+    port = "${openstack_networking_port_v2.public_port_bastion.id}"
     access_network = true
   }
 

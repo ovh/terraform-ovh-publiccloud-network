@@ -102,6 +102,11 @@ variable "nat_instance_flavor_names" {
   }
 }
 
+variable "default_nat_instance_flavor_name" {
+  description = "Default NAT flavor name"
+  default     = "s1-2"
+}
+
 variable "bastion_instance_flavor_name" {
   description = "The flavor name region that will be used for bastion hosts."
   default     = ""
@@ -122,6 +127,11 @@ variable "bastion_instance_flavor_names" {
     DE1  = "s1-2"
     UK1  = "s1-2"
   }
+}
+
+variable "default_bastion_instance_flavor_name" {
+  description = "Default Bastion flavor name"
+  default     = "s1-2"
 }
 
 variable "enable_nat_gateway" {
@@ -164,6 +174,11 @@ variable "ovh_pub_nets" {
     WAW1 = "Ext-Net"
     UK1  = "Ext-Net"
   }
+}
+
+variable "default_ovh_pub_net" {
+  description = "Default ovh public network name"
+  default     = "Ext-Net"
 }
 
 variable "dns_nameservers" {

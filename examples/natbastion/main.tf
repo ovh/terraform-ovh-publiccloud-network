@@ -6,6 +6,7 @@ provider "ovh" {
 
 provider "openstack" {
   region = "${var.region}"
+  version = "~> 1.2"
 }
 
 # Import Keypair
