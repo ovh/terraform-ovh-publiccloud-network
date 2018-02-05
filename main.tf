@@ -13,19 +13,6 @@ terraform {
   required_version = ">= 0.11.0"
 }
 
-provider "openstack" {
-  version = "~> 1.0"
-  region  = "${var.region}"
-}
-
-provider "ignition" {
-  version = "~> 1.0"
-}
-
-provider "ovh" {
-  version = "~> 0.1"
-}
-
 locals {
   re_cap_cidr_block  = "/[^/]*/([0-9]*)$/"
   network_cidr_block = "${replace(var.cidr, local.re_cap_cidr_block, "$1")}"

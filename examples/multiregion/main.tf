@@ -1,18 +1,26 @@
+provider "ignition" {
+  version = "~> 1.0"
+}
+
 provider "ovh" {
+  version = "~> 0.2"
   endpoint = "ovh-eu"
 }
 
 provider "openstack" {
+  version = "~> 1.2"
   alias  = "GRA3"
   region = "GRA3"
 }
 
 provider "openstack" {
+  version = "~> 1.2"
   alias  = "DE1"
   region = "DE1"
 }
 
 provider "openstack" {
+  version = "~> 1.2"
   alias  = "SBG3"
   region = "SBG3"
 }

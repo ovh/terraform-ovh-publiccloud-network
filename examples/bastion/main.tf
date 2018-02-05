@@ -1,10 +1,17 @@
+provider "openstack" {
+  version = "~> 1.2"
+  region  = "${var.region}"
+}
+
+provider "ignition" {
+  version = "~> 1.0"
+}
+
 provider "ovh" {
+  version = "~> 0.2"
   endpoint = "ovh-eu"
 }
 
-provider "openstack" {
-  region = "${var.region}"
-}
 
 # Import Keypair
 resource "openstack_compute_keypair_v2" "keypair" {
@@ -17,8 +24,8 @@ module "network" {
 #  version = ">= 0.0.10"
   source = "../.."
 
+  attach_vrack    = false
   project_id      = "${var.project_id}"
-  vrack_id        = "${var.vrack_id}"
   name            = "mybastionnetwork"
   cidr            = "10.0.0.0/16"
   region          = "${var.region}"
@@ -37,6 +44,7 @@ module "network" {
 }
 
 resource "openstack_networking_port_v2" "port_private_instance" {
+  count          = "1"
   name           = "port_private_instance"
   network_id     = "${module.network.network_id}"
   admin_state_up = "true"
@@ -47,6 +55,7 @@ resource "openstack_networking_port_v2" "port_private_instance" {
 }
 
 resource "openstack_compute_instance_v2" "my_private_instance" {
+  count       = 1
   name        = "my_private_instance"
   image_name  = "Centos 7"
   flavor_name = "s1-8"
@@ -64,6 +73,6 @@ write_files:
 USERDATA
 
   network {
-    port = "${openstack_networking_port_v2.port_private_instance.id}"
+    port = "${openstack_networking_port_v2.port_private_instance.*.id[count.index]}"
   }
 }

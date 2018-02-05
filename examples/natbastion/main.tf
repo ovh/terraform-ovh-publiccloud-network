@@ -1,12 +1,17 @@
 ## This example requires that you already have attached your openstack project
 ## your OVH Vrack
-provider "ovh" {
-  endpoint = "ovh-eu"
+provider "openstack" {
+  version = "~> 1.2"
+  region  = "${var.region}"
 }
 
-provider "openstack" {
-  region = "${var.region}"
-  version = "~> 1.2"
+provider "ignition" {
+  version = "~> 1.0"
+}
+
+provider "ovh" {
+  version = "~> 0.2"
+  endpoint = "ovh-eu"
 }
 
 # Import Keypair
