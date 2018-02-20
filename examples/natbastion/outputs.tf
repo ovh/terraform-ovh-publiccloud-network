@@ -1,3 +1,8 @@
+output "tf_test" {
+  description = "Command to test if example ran well"
+  value = "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o ProxyCommand='ssh -o StrictHostKeyChecking=no core@${module.network.bastion_public_ip} ncat %h %p' centos@${openstack_compute_instance_v2.my_private_instance.access_ip_v4} echo ok"
+}
+
 output "helper" {
   description = "human friendly helper"
   value = <<DESC

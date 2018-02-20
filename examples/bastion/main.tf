@@ -7,11 +7,6 @@ provider "ignition" {
   version = "~> 1.0"
 }
 
-provider "ovh" {
-  version = "~> 0.2"
-  endpoint = "ovh-eu"
-}
-
 
 # Import Keypair
 resource "openstack_compute_keypair_v2" "keypair" {
@@ -24,8 +19,6 @@ module "network" {
 #  version = ">= 0.0.10"
   source = "../.."
 
-  attach_vrack    = false
-  project_id      = "${var.project_id}"
   name            = "mybastionnetwork"
   cidr            = "10.0.0.0/16"
   region          = "${var.region}"

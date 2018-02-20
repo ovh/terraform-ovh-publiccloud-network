@@ -2,23 +2,9 @@ variable "name" {
   description = "Name to be used on all the resources as identifier"
 }
 
-variable "vrack_id" {
-  description = "The id of the vrack. This is required if network_id is not specified."
-  default     = ""
-}
-
-variable "attach_vrack" {
-  description = "Should be true if you want to attach your openstack project to your OVH VRack."
-  default     = true
-}
-
 variable "create_network" {
   description = "Should be false if `network_id` is specified."
   default     = true
-}
-
-variable "project_id" {
-  description = "The id of the openstack project. This is always required even if not used in order to avoid future breaking change."
 }
 
 variable "network_id" {

@@ -20,12 +20,6 @@ locals {
   network_id         = "${element(coalescelist(openstack_networking_network_v2.net.*.id, data.openstack_networking_network_v2.preexisting_net.*.id, list("")), 0)}"
 }
 
-resource "ovh_vrack_publiccloud_attachment" "attach" {
-  count      = "${var.attach_vrack && var.vrack_id != "" ? 1 : 0}"
-  vrack_id   = "${var.vrack_id}"
-  project_id = "${var.project_id}"
-}
-
 data "openstack_networking_network_v2" "ext_net" {
   name      = "${lookup(var.ovh_pub_nets, var.region, var.default_ovh_pub_net)}"
   tenant_id = ""
@@ -41,7 +35,6 @@ resource "openstack_networking_network_v2" "net" {
   count          = "${var.create_network && var.network_id == "" && var.network_name == "" ? 1 : 0}"
   name           = "${var.name}"
   admin_state_up = "true"
-  depends_on     = ["ovh_vrack_publiccloud_attachment.attach"]
 }
 
 resource "openstack_networking_secgroup_v2" "nat_sg" {

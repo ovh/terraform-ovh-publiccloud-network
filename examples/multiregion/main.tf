@@ -50,11 +50,9 @@ module "network_GRA3" {
   #  version = ">= 0.0.10"
   source = "../.."
 
-  project_id         = "${var.project_id}"
   network_name       = "${ovh_publiccloud_private_network.net.name}"
   create_network     = false
   name               = "${var.network_name}"
-  attach_vrack       = "${var.attach_vrack}"
   cidr               = "10.0.0.0/16"
   region             = "GRA3"
   public_subnets     = ["10.0.0.0/24"]
@@ -77,11 +75,9 @@ module "network_SBG3" {
   #  version = ">= 0.0.10"
   source = "../.."
 
-  project_id         = "${var.project_id}"
   network_name       = "${ovh_publiccloud_private_network.net.name}"
   create_network     = false
   name               = "${var.network_name}"
-  attach_vrack       = "${var.attach_vrack}"
   cidr               = "10.0.0.0/16"
   region             = "SBG3"
   public_subnets     = ["10.0.10.0/24"]
@@ -104,11 +100,9 @@ module "network_DE1" {
   #  version = ">= 0.0.10"
   source = "../.."
 
-  project_id         = "${var.project_id}"
   create_network     = false
   network_name       = "${ovh_publiccloud_private_network.net.name}"
   name               = "${var.network_name}"
-  attach_vrack       = "${var.attach_vrack}"
   cidr               = "10.0.0.0/16"
   region             = "DE1"
   public_subnets     = ["10.0.20.0/24"]

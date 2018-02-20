@@ -9,11 +9,6 @@ provider "ignition" {
   version = "~> 1.0"
 }
 
-provider "ovh" {
-  version = "~> 0.2"
-  endpoint = "ovh-eu"
-}
-
 # Import Keypair
 resource "openstack_compute_keypair_v2" "keypair" {
   name       = "example-natbastion-keypair"
@@ -25,8 +20,6 @@ module "network" {
 #  version = ">= 0.0.10"
   source = "../.."
 
-  project_id      = "${var.project_id}"
-  attach_vrack    = false
   name            = "example-natbastion-network"
   cidr            = "10.1.0.0/16"
   region          = "${var.region}"

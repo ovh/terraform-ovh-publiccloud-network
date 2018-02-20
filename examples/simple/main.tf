@@ -7,20 +7,11 @@ provider "ignition" {
   version = "~> 1.0"
 }
 
-provider "ovh" {
-  version = "~> 0.2"
-  endpoint = "ovh-eu"
-}
-
 module "network" {
 #  source = "ovh/publiccloud-network/ovh"
 #  version = ">= 0.0.10"
   source = "../.."
 
-  project_id = "${var.project_id}"
-  vrack_id   = "${var.vrack_id}"
-
-  attach_vrack = "${var.attach_vrack}"
   name         = "mysimplenetwork"
   cidr         = "10.0.0.0/16"
 
