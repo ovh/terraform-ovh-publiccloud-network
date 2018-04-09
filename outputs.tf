@@ -5,7 +5,7 @@ output "nat_security_group_id" {
 
 output "bastion_security_group_id" {
   description = "The id of the security group attached to the bastion hosts. It can be used to later attach rules."
-  value       = "${openstack_networking_secgroup_v2.nat_sg.id}"
+  value       = "${openstack_networking_secgroup_v2.bastion_sg.id}"
 }
 
 output "network_id" {

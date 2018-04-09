@@ -120,8 +120,8 @@ resource "openstack_networking_subnet_v2" "public_subnets" {
   }
 }
 
-resource "openstack_networking_subnet_v2" "private_subnets" {
-  count      = "${length(var.private_subnets)}"
+resource "openstack_networking_subnet_v2" "nat_private_subnets" {
+  count      = "${var.enable_nat_gateway ? length(var.private_subnets) : 0}"
   name       = "${var.name}_subnet_${count.index}"
   network_id = "${local.network_id}"
   cidr       = "${element(var.private_subnets, count.index)}"
@@ -146,7 +146,32 @@ resource "openstack_networking_subnet_v2" "private_subnets" {
 
   host_routes {
     destination_cidr = "0.0.0.0/0"
-    next_hop         = "${element(openstack_networking_port_v2.port_nats.*.fixed_ip.0.ip_address, count.index)}"
+    next_hop         = "${element(coalescelist(openstack_networking_port_v2.port_nats.*.fixed_ip.0.ip_address, list("dummy")), count.index)}"
+  }
+}
+
+resource "openstack_networking_subnet_v2" "no_nat_private_subnets" {
+  count      = "${var.enable_nat_gateway ? 0 : length(var.private_subnets)}"
+  name       = "${var.name}_subnet_${count.index}"
+  network_id = "${local.network_id}"
+  cidr       = "${element(var.private_subnets, count.index)}"
+  ip_version = 4
+
+  # dhcp is required if you want to be able to retrieve metadata from
+  # the 169.254.169.254 because the route is pushed via dhcp
+  enable_dhcp = true
+
+  # this attribute is set for doc purpose only : GW are not used within OVH
+  # network as it's a layer 3 network. Instead, you have to setup your
+  # routes properly on each VM. see nat's ignition config for an example
+  no_gateway = true
+
+  dns_nameservers = ["${var.dns_nameservers}"]
+
+  allocation_pools {
+    # dhcp agents will take an ip at the beginning of the allocation pool
+    start = "${cidrhost(var.private_subnets[count.index],2)}"
+    end   = "${cidrhost(var.private_subnets[count.index],-2)}"
   }
 }
 
@@ -273,14 +298,14 @@ resource "openstack_compute_instance_v2" "nats" {
 # available to other resources outside the module, the associated NAT GW has been spawned
 # thus ensuring internet connectivity.
 # Otherwise, instances and nat gws maybe spawned in parallel, resulting in possible failure of
-# instances cloudinit scripts.
+# instances cloudinit scripts that relies on internet connection
 data "template_file" "private_subnets_ids" {
   count    = "${length(var.private_subnets)}"
   template = "$${private_subnet_id}"
 
   vars {
-    nat_id            = "${element(openstack_compute_instance_v2.nats.*.id, count.index)}"
-    private_subnet_id = "${element(openstack_networking_subnet_v2.private_subnets.*.id, count.index)}"
+    nat_id            = "${element(coalescelist(openstack_compute_instance_v2.nats.*.id, list("")), count.index)}"
+    private_subnet_id = "${element(coalescelist(openstack_networking_subnet_v2.nat_private_subnets.*.id, openstack_networking_subnet_v2.no_nat_private_subnets.*.id), count.index)}"
   }
 }
 
