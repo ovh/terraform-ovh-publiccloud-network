@@ -7,17 +7,17 @@
 ## each instance that can be reached through the internet
 ## should be attached to. (e.g. NATs, LBs, Bastion hosts, ...)
 ## - the 2nd ip will be reserved for nat gateways (usually .1)
-## - the 3rd ip will be reserved for bastion host (usually .2)
-## - the allocation pools will start at the 4th ip (usually .3)
+## - the allocation pools will start at the 3rd ip (usually .2)
 terraform {
   required_version = ">= 0.11.0"
 }
 
 locals {
+  nb_nats            = "${var.enable_nat_gateway ? (var.single_nat_gateway ? 1 : length(var.private_subnets)) : 0}"
   re_cap_cidr_block  = "/[^/]*/([0-9]*)$/"
   network_cidr_block = "${replace(var.cidr, local.re_cap_cidr_block, "$1")}"
   nat_ssh_keys       = "${compact(split(",", var.nat_as_bastion && var.enable_nat_gateway && length(var.ssh_public_keys) > 0 ? join(",", var.ssh_public_keys) : ""))}"
-  network_id         = "${element(coalescelist(openstack_networking_network_v2.net.*.id, data.openstack_networking_network_v2.preexisting_net.*.id, list("")), 0)}"
+  network_id         = "${element(coalescelist(openstack_networking_network_v2.net.*.id, data.openstack_networking_network_v2.preexisting_net.*.id), 0)}"
 }
 
 data "openstack_networking_network_v2" "ext_net" {
@@ -32,7 +32,7 @@ data "openstack_networking_network_v2" "preexisting_net" {
 }
 
 resource "openstack_networking_network_v2" "net" {
-  count          = "${var.create_network && var.network_id == "" && var.network_name == "" ? 1 : 0}"
+  count          = "${var.create_network ? 1 : 0}"
   name           = "${var.name}"
   admin_state_up = "true"
 }
@@ -176,7 +176,7 @@ resource "openstack_networking_subnet_v2" "no_nat_private_subnets" {
 }
 
 resource "openstack_networking_port_v2" "public_port_nats" {
-  count = "${var.enable_nat_gateway ? (var.single_nat_gateway ? 1 : length(var.private_subnets)) : 0}"
+  count = "${local.nb_nats}"
 
   name               = "${var.name}_public_port_nat_${count.index}"
   network_id         = "${data.openstack_networking_network_v2.ext_net.id}"
@@ -185,7 +185,7 @@ resource "openstack_networking_port_v2" "public_port_nats" {
 }
 
 resource "openstack_networking_port_v2" "port_nats" {
-  count = "${var.enable_nat_gateway ? (var.single_nat_gateway ? 1 : length(var.private_subnets)) : 0}"
+  count = "${local.nb_nats}"
 
   name       = "${var.name}_port_nat_${count.index}"
   network_id = "${local.network_id}"
@@ -200,62 +200,65 @@ resource "openstack_networking_port_v2" "port_nats" {
   }
 }
 
-# as of today, networks get a dhcp route on 0.0.0.0/0 which could conflicts with pub networks routes
-# set route metric to 2048 in order to privilege eth0 default routes (with a default metric of 1024) over eth1
-## also enables ip forward to act as a nat
-data "ignition_networkd_unit" "nat_eth1" {
-  count = "${var.enable_nat_gateway ? (var.single_nat_gateway ? 1 : length(var.private_subnets)) : 0}"
-  name  = "20-eth1.network"
+data "template_file" "nat_systemd_network_files" {
+  count = "${local.nb_nats}"
 
-  ## Address is set with the global network CIDR block
-  ## will ensure broadcast address to be set for the global network.
-  ## (e.g.: 10.0.0.1/24 with broadcast 10.0.0.255 -> 10.0.0.1/16 with broadcast 10.0.255.255)
-  content = <<IGNITION
-[Match]
-Name=eth1
-[Network]
-DHCP=ipv4
-IPForward=ipv4
-IPMasquerade=yes
-[Route]
-Destination=${var.cidr}
-GatewayOnLink=yes
-RouteMetric=3
-Scope=link
-Protocol=kernel
-Source=${cidrhost(var.public_subnets[count.index], 1)}
-[DHCP]
-RouteMetric=2048
-[Address]
-Address=${format("%s/%s", cidrhost(var.public_subnets[count.index], 1), local.network_cidr_block)}
-Scope=global
-IGNITION
+  template = <<TPL
+- path: /etc/systemd/network/10-eth0.network
+  permissions: '0644'
+  content: |
+     ## Address is set with the global network CIDR block
+     ## will ensure broadcast address to be set for the global network.
+     ## (e.g.: 10.0.0.1/24 with broadcast 10.0.0.255 -> 10.0.0.1/16 with broadcast 10.0.255.255)
+     [Match]
+     Name=eth0
+     [Network]
+     DHCP=ipv4
+     IPForward=ipv4
+     IPMasquerade=yes
+     [Route]
+     Destination=${var.cidr}
+     GatewayOnLink=yes
+     Scope=link
+     Protocol=kernel
+     Source=${cidrhost(var.public_subnets[count.index], 1)}
+     [Address]
+     Address=${format("%s/%s", cidrhost(var.public_subnets[count.index], 1), local.network_cidr_block)}
+     Scope=global
+- path: /etc/systemd/network/20-eth1.network
+  permissions: '0644'
+  content: |
+    [Match]
+    Name=eth1
+    [Network]
+    DHCP=ipv4
+TPL
 }
 
-data "ignition_networkd_unit" "nat_eth0" {
-  count = "${var.enable_nat_gateway ? 1 : 0}"
-  name  = "10-eth0.network"
+# Render a multi-part cloudinit config making use of the part
+# above, and other source files
+data "template_file" "nat_userdata" {
+  count = "${local.nb_nats}"
 
-  content = <<IGNITION
-[Match]
-Name=eth0
-[Network]
-DHCP=ipv4
-[DHCP]
-RouteMetric=1024
-IGNITION
-}
-
-data "ignition_user" "nat_core" {
-  name                = "core"
-  ssh_authorized_keys = ["${local.nat_ssh_keys}"]
-}
-
-data "ignition_config" "nat" {
-  count = "${var.enable_nat_gateway ? (var.single_nat_gateway ? 1 : length(var.private_subnets)) : 0}"
-
-  networkd = ["${data.ignition_networkd_unit.nat_eth0.id}", "${element(data.ignition_networkd_unit.nat_eth1.*.id, count.index)}"]
-  users    = ["${data.ignition_user.nat_core.*.id}"]
+  template = <<CLOUDCONFIG
+#cloud-config
+ssh_authorized_keys:
+  ${indent(2, join("\n", formatlist("- %s", local.nat_ssh_keys)))}
+## This route has to be added in order to reach other subnets of the network
+coreos:
+  update:
+    reboot-strategy: "off"
+  units:
+    - name: "restartnetwork.service"
+      command: "start"
+      content: |
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=/usr/bin/systemctl restart systemd-networkd.service
+write_files:
+  ${indent(2, element(data.template_file.nat_systemd_network_files.*.rendered, count.index))}
+CLOUDCONFIG
 }
 
 resource "openstack_compute_servergroup_v2" "nats" {
@@ -270,21 +273,22 @@ resource "openstack_compute_servergroup_v2" "nats" {
 # wise to benefit security updates on this kind of service instances.
 # here we chose to suffer intermittent internet broken link.
 resource "openstack_compute_instance_v2" "nats" {
-  count = "${var.enable_nat_gateway ? (var.single_nat_gateway ? 1 : length(var.private_subnets)) : 0}"
+  count = "${local.nb_nats}"
 
   name        = "${var.name}_nat_gw_${count.index}"
   image_name  = "CoreOS Stable"
   flavor_name = "${var.nat_instance_flavor_name != "" ? var.nat_instance_flavor_name : lookup(var.nat_instance_flavor_names, var.region, var.default_nat_instance_flavor_name)}"
-  user_data   = "${element(data.ignition_config.nat.*.rendered,count.index)}"
+  user_data   = "${element(data.template_file.nat_userdata.*.rendered,count.index)}"
+  key_pair    = "${var.key_pair}"
 
-  # keep netwokrs in this order so that ext-net is set on eth0
+  # keep netwokrs in this order so that ext-net is set on eth1
   network {
-    access_network = true
-    port           = "${element(openstack_networking_port_v2.public_port_nats.*.id, count.index)}"
+    port = "${element(openstack_networking_port_v2.port_nats.*.id, count.index)}"
   }
 
   network {
-    port = "${element(openstack_networking_port_v2.port_nats.*.id, count.index)}"
+    access_network = true
+    port           = "${element(openstack_networking_port_v2.public_port_nats.*.id, count.index)}"
   }
 
   scheduler_hints {
@@ -331,77 +335,72 @@ resource "openstack_networking_port_v2" "port_bastion" {
   }
 }
 
-# as of today, networks get a dhcp route on 0.0.0.0/0 which could conflicts with pub networks routes
-# set route metric to 2048 in order to privilege eth0 default routes (with a default metric of 1024) over eth1
-data "ignition_networkd_unit" "bastion_eth1" {
-  name = "20-eth1.network"
-
-  content = <<IGNITION
-[Match]
-Name=eth1
-[Network]
-DHCP=ipv4
-[Route]
-Destination=${var.cidr}
-GatewayOnLink=yes
-RouteMetric=3
-Scope=link
-Protocol=kernel
-Source=${cidrhost(var.public_subnets[count.index], 2)}
-[DHCP]
-RouteMetric=2048
-[Address]
-Address=${format("%s/%s", cidrhost(var.public_subnets[count.index], 2), local.network_cidr_block)}
-Scope=global
-IGNITION
+data "template_file" "bastion_systemd_network_files" {
+  template = <<TPL
+- path: /etc/systemd/network/10-eth0.network
+  permissions: '0644'
+  content: |
+     [Match]
+     Name=eth0
+     [Network]
+     DHCP=ipv4
+     [Route]
+     Destination=${var.cidr}
+     GatewayOnLink=yes
+     Scope=link
+     Protocol=kernel
+- path: /etc/systemd/network/20-eth1.network
+  permissions: '0644'
+  content: |
+    [Match]
+    Name=eth1
+    [Network]
+    DHCP=ipv4
+TPL
 }
 
-data "ignition_networkd_unit" "bastion_eth0" {
-  name = "10-eth0.network"
-
-  content = <<IGNITION
-[Match]
-Name=eth0
-[Network]
-DHCP=ipv4
-[DHCP]
-RouteMetric=1024
-IGNITION
+# Render a multi-part cloudinit config making use of the part
+# above, and other source files
+data "template_file" "bastion_userdata" {
+  template = <<CLOUDCONFIG
+#cloud-config
+ssh_authorized_keys:
+  ${indent(2, join("\n", formatlist("- %s", local.nat_ssh_keys)))}
+## This route has to be added in order to reach other subnets of the network
+coreos:
+  update:
+    reboot-strategy: "off"
+  units:
+    - name: "restartnetwork.service"
+      command: "start"
+      content: |
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=/usr/bin/systemctl restart systemd-networkd.service
+write_files:
+  ${indent(2, data.template_file.bastion_systemd_network_files.rendered)}
+CLOUDCONFIG
 }
 
-data "ignition_user" "bastion_core" {
-  name                = "core"
-  ssh_authorized_keys = ["${var.ssh_public_keys}"]
-}
-
-data "ignition_config" "bastion" {
-  networkd = ["${data.ignition_networkd_unit.bastion_eth0.id}", "${data.ignition_networkd_unit.bastion_eth1.id}"]
-  users    = ["${data.ignition_user.bastion_core.id}"]
-}
-
-# bastion instance is coreos boxes. meaning it will auto restart whenever an update
-# on the stable channel will be made. (e.g.: security patches).
-# this could lead to broken internet link during reboot phase.
-# it could be disabled by a specific ignition setup, but it is also
-# wise to benefit security updates on this kind of service instances.
-# here we chose to suffer intermittent internet broken link.
 resource "openstack_compute_instance_v2" "bastion" {
   count = "${var.enable_bastion_host ? 1 : 0 }"
 
   name        = "${var.name}_bastion"
   image_name  = "CoreOS Stable"
   flavor_name = "${var.bastion_instance_flavor_name != "" ? var.bastion_instance_flavor_name : lookup(var.bastion_instance_flavor_names, var.region, var.default_bastion_instance_flavor_name)}"
+  key_pair    = "${var.key_pair}"
 
-  user_data = "${data.ignition_config.bastion.rendered}"
+  user_data = "${data.template_file.bastion_userdata.rendered}"
 
-  # keep netwokrs in this order so that ext-net is set on eth0
+  # keep netwokrs in this order so that ext-net is set on eth1
   network {
-    port = "${openstack_networking_port_v2.public_port_bastion.id}"
-    access_network = true
+    port = "${openstack_networking_port_v2.port_bastion.id}"
   }
 
   network {
-    port = "${openstack_networking_port_v2.port_bastion.id}"
+    access_network = true
+    port           = "${openstack_networking_port_v2.public_port_bastion.id}"
   }
 
   metadata = "${var.metadata}"

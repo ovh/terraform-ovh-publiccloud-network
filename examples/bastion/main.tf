@@ -3,11 +3,6 @@ provider "openstack" {
   region  = "${var.region}"
 }
 
-provider "ignition" {
-  version = "~> 1.0"
-}
-
-
 # Import Keypair
 resource "openstack_compute_keypair_v2" "keypair" {
   name       = "my-keypair"
@@ -15,19 +10,17 @@ resource "openstack_compute_keypair_v2" "keypair" {
 }
 
 module "network" {
-#  source = "ovh/publiccloud-network/ovh"
-#  version = ">= 0.0.10"
+  #  source = "ovh/publiccloud-network/ovh"
+  #  version = ">= 0.0.10"
   source = "../.."
 
-  name            = "mybastionnetwork"
-  cidr            = "10.0.0.0/16"
-  region          = "${var.region}"
-  public_subnets  = ["10.0.0.0/24", "10.0.10.0/24"]
-  private_subnets = ["10.0.1.0/24", "10.0.11.0/24"]
-
+  name                = "mybastionnetwork"
+  cidr                = "10.0.0.0/16"
+  region              = "${var.region}"
+  public_subnets      = ["10.0.0.0/24", "10.0.10.0/24"]
+  private_subnets     = ["10.0.1.0/24", "10.0.11.0/24"]
   enable_bastion_host = true
-
-  ssh_public_keys = ["${openstack_compute_keypair_v2.keypair.public_key}"]
+  key_pair            = "${openstack_compute_keypair_v2.keypair.name}"
 
   metadata = {
     Terraform   = "true"

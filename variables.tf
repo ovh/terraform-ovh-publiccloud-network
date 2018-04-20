@@ -58,10 +58,15 @@ variable "private_subnets" {
   default     = []
 }
 
+variable "key_pair" {
+  description = "The openstack key pair to be used for nat instances and bastion hosts. Can be used in conjunction with `ssh_public_keys`."
+  default = ""
+}
+
 variable "ssh_public_keys" {
   type = "list"
 
-  description = "The ssh public keys to be used for nat instances and bastion hosts."
+  description = "The ssh public keys to be used for nat instances and bastion hosts. Can be used in conjunction with `key_pair`."
 
   default = []
 }

@@ -5,10 +5,6 @@ provider "openstack" {
   region  = "${var.region}"
 }
 
-provider "ignition" {
-  version = "~> 1.0"
-}
-
 # Import Keypair
 resource "openstack_compute_keypair_v2" "keypair" {
   name       = "example-natbastion-keypair"
@@ -16,21 +12,19 @@ resource "openstack_compute_keypair_v2" "keypair" {
 }
 
 module "network" {
-#  source = "ovh/publiccloud-network/ovh"
-#  version = ">= 0.0.10"
+  #  source = "ovh/publiccloud-network/ovh"
+  #  version = ">= 0.0.10"
   source = "../.."
 
-  name            = "example-natbastion-network"
-  cidr            = "10.1.0.0/16"
-  region          = "${var.region}"
-  public_subnets  = ["10.1.0.0/24"]
-  private_subnets = ["10.1.1.0/24", "10.1.2.0/24"]
-
+  name               = "example-natbastion-network"
+  cidr               = "10.1.0.0/16"
+  region             = "${var.region}"
+  public_subnets     = ["10.1.0.0/24"]
+  private_subnets    = ["10.1.1.0/24", "10.1.2.0/24"]
   enable_nat_gateway = true
   single_nat_gateway = true
   nat_as_bastion     = true
-
-  ssh_public_keys = ["${openstack_compute_keypair_v2.keypair.public_key}"]
+  key_pair           = "${openstack_compute_keypair_v2.keypair.name}"
 
   metadata = {
     Terraform   = "true"
