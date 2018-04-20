@@ -1,7 +1,3 @@
-provider "ignition" {
-  version = "~> 1.0"
-}
-
 provider "ovh" {
   version = "~> 0.2"
   endpoint = "ovh-eu"
