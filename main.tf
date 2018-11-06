@@ -249,13 +249,21 @@ coreos:
   update:
     reboot-strategy: "off"
   units:
-    - name: "restartnetwork.service"
+    - name: "postsetup.service"
       command: "start"
       content: |
         [Service]
         Type=oneshot
         RemainAfterExit=yes
-        ExecStart=/usr/bin/systemctl restart systemd-networkd.service
+        # applies network setup at first boot
+        ExecStartPre=-/bin/sh -c '[ ! -f /var/lib/first_boot ] && \
+                  systemctl restart systemd-networkd.service && \
+                  systemctl stop update-engine.service locksmithd.service && \
+                  systemctl mask update-engine.service locksmithd.service && \
+                  iptables -A FORWARD -s 0.0.0.0/0 -d 169.254.169.254 -j DROP && \
+                  iptables-save --counters > /var/lib/iptables/rules-save && \
+                  systemctl enable iptables-restore.service'
+        ExecStart=/bin/touch /var/lib/first_boot
 write_files:
   ${indent(2, element(data.template_file.nat_systemd_network_files.*.rendered, count.index))}
 CLOUDCONFIG
